@@ -1,19 +1,11 @@
-## General
+## Whisper batch transcriber
 
-Build a Docker image that installs a version of PyTorch compatible with my GPU.
+A minimalist Docker Compose setup to batch-transcribe audio files using OpenAI Whisper and NVIDIA CUDA acceleration.
 
-## Preparations
+## Installation & host configuration.
 
-1. Download and install the [CUDA Toolkit 13.3](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=Debian&target_version=13&target_type=deb_local):
-```bash
-wget https://developer.download.nvidia.com/compute/cuda/13.3.0/local_installers/cuda-repo-debian13-13-3-local_13.3.0-610.43.02-1_amd64.deb
-sudo dpkg -i cuda-repo-debian13-13-3-local_13.3.0-610.43.02-1_amd64.deb
-sudo cp /var/cuda-repo-debian13-13-3-local/cuda-*-keyring.gpg /usr/share/keyrings/
-sudo apt-get update
-sudo apt-get -y install cuda-toolkit-13-3
-```
+1. Download and install [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
 
-2. Download and install [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
 ```bash
 sudo apt-get update && sudo apt-get install -y --no-install-recommends \
    ca-certificates \
@@ -35,14 +27,54 @@ sudo apt-get install -y \
     nvidia-container-toolkit-base=$NVIDIA_CONTAINER_TOOLKIT_VERSION \
     libnvidia-container-tools=$NVIDIA_CONTAINER_TOOLKIT_VERSION \
     libnvidia-container1=$NVIDIA_CONTAINER_TOOLKIT_VERSION
+```
 
+2. Configure Docker runtime
+
+Register the NVIDIA runtime extension in Docker's daemon configuration and restart the service.
+
+```bash
 sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
 ```
 
 3. Test: `sudo docker run --rm --gpus all --entrypoint python whisper-cuda -c "import torch; print('CUDA verfügbar:', torch.cuda.is_available()); print('Grafikkarte:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'Keine')"` should display the following output:
+
 ```bash
 CUDA verfügbar: True
 Grafikkarte: NVIDIA GeForce GTX 1050
 ```
 
+## Configuration
+
+Ensure your directory structure looks like this:
+
+```bash
+.
+├── Dockerfile
+├── docker-compose.yml
+└── transcribe.py
+```
+
+## Docker Compose Paths
+
+Adjust the local host volume mounts in docker-compose.yml to point to your specific audio folders if needed:
+
+```bash
+volumes:
+  - ~/Dokumente/Aufnahmen:/in
+  - ~/Dokumente/Aufnahmen/Transkriptionen:/out
+  ```
+
+## Usage
+
+1. Build the local Python container wrapper (runs on top of PyTorch CUDA runtime): `docker compose build`
+2. Process all audio files inside the configured incoming directory (`/in`). This automatically uses the medium model, forces cuda processing, and outputs `.txt` files to `/out`: `docker compose run --rm whisper`.
+
+## Advanced Arguments
+
+Pass any standard script argument overriding the defaults directly to the execution layer:
+
+- Single File: docker compose run --rm whisper --input /in/<filename>.m4a  
+- Custom Model: docker compose run --rm whisper --model base
+- Change Language: docker compose run --rm whisper --language en
