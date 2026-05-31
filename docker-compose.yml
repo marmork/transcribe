@@ -1,0 +1,15 @@
+services:
+  whisper:
+    build: .
+    image: whisper-cuda:latest
+    container_name: whisper_batch_container
+    volumes:
+      - ~/Dokumente/Aufnahmen:/in
+      - ~/Dokumente/Aufnahmen/Transkriptionen:/out
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
