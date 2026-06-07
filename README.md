@@ -89,13 +89,3 @@ Available CLI Arguments:
 - `--model`: The Whisper model size to use (tiny, base, small, medium, large). Note: smallis highly recommended for 4GB VRAM limitations.
 - `--language`: Explicit language code (e.g., de, en). Leaving it out triggers auto-detection.
 
-1. Build the local Python container wrapper (runs on top of PyTorch CUDA runtime): `docker compose build`
-2. Process all audio files inside the configured incoming directory (`/in`). This automatically uses the medium model, forces cuda processing, and outputs `.txt` files to `/out`: `docker compose run --rm whisper`.
-
-## Advanced Arguments
-
-Pass any standard script argument overriding the defaults directly to the execution layer:
-
-- Single File: docker compose run --rm whisper --input /in/<filename>.m4a  
-- Custom Model: docker compose run --rm whisper --model base
-- Change Language: docker compose run --rm whisper --language en
