@@ -45,6 +45,8 @@ CUDA verfügbar: True
 Grafikkarte: NVIDIA GeForce GTX 1050
 ```
 
+As an additional test, `sudo docker compose run --rm whisper --help` should display the help of the main transcribe script.
+
 ## Configuration
 
 Ensure your directory structure looks like this:
@@ -62,11 +64,30 @@ Adjust the local host volume mounts in docker-compose.yml to point to your speci
 
 ```bash
 volumes:
-  - ~/Dokumente/Aufnahmen:/in
-  - ~/Dokumente/Aufnahmen/Transkriptionen:/out
+  - home/<username>/Dokumente/Aufnahmen:/in
+  - home/<username>/Dokumente/Aufnahmen/Transkriptionen:/out
   ```
 
 ## Usage
+
+Hardware Constraint Note: The medium model will trigger a CUDA out of memory error on a 4GB VRAM card (like the GTX 1050). Always explicitly specify `--model small` for stable execution.  
+Before running, build the local Python container wrapper (runs on top of PyTorch CUDA runtime): `sudo docker compose build`.
+
+### 1. Batch processing (default mode)
+
+To transcribe all compatible audio files in your input folder at once, simply launch the compose stack without additional arguments. The script will automatically scan the folder and process files sequentially: `sudo docker compose run --rm --entrypoint "python3 transcribe.py" whisper --model small --language de`.
+
+### 2. Transcribing a specific single file
+
+If you want to isolate processing to a single target file, pass the --input flag followed by the path relative to the container's internal /in directory: `sudo docker compose run --rm --entrypoint "python3 transcribe.py" whisper --input "/in/<filename>.m4a" --model small --language de`
+
+### 3. Advanced CLI overrides
+
+You can customize the execution dynamic directly from the command line by tweaking the transcription model or specifying the audio language: `sudo docker compose run --rm whisper --model base --language de --input /in/quick-memo.mp3`.  
+Available CLI Arguments:  
+- `--input`: Path to a specific file inside /in/ (Omitting this triggers batch mode).
+- `--model`: The Whisper model size to use (tiny, base, small, medium, large). Note: smallis highly recommended for 4GB VRAM limitations.
+- `--language`: Explicit language code (e.g., de, en). Leaving it out triggers auto-detection.
 
 1. Build the local Python container wrapper (runs on top of PyTorch CUDA runtime): `docker compose build`
 2. Process all audio files inside the configured incoming directory (`/in`). This automatically uses the medium model, forces cuda processing, and outputs `.txt` files to `/out`: `docker compose run --rm whisper`.
