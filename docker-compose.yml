@@ -4,8 +4,8 @@ services:
     image: whisper-cuda:latest
     container_name: whisper_batch_container
     volumes:
-      - ~/Dokumente/Aufnahmen:/in
-      - ~/Dokumente/Aufnahmen/Transkriptionen:/out
+      - /home/marcel/Dokumente/Aufnahmen:/in
+      - /home/marcel/Dokumente/Aufnahmen/Transkriptionen:/out
     deploy:
       resources:
         reservations:
